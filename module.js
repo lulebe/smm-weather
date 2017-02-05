@@ -6,30 +6,56 @@ const speech = require('../../speech/recognition')
 
 let moduleData = null
 
-function getIcon (icon) {
-  switch (icon) {
-    case 'clear-day':
-      return 'sun.png'
-    case 'clear-night': //TODO find icon
-      return 'sun.png'
-    case 'rain':
-      return 'rain.png'
-    case 'snow':
-      return 'snow.png'
-    case 'sleet':
-      return 'rain-show.png' //TODO find icon
-    case 'wind':
-      return 'wind.png'
-    case 'fog':
-      return '' //TODO find icon
-    case 'cloudy':
-      return 'clouds.png'
-    case 'partly-cloudy-day':
-      return 'sun-clouds.png'
-    case 'partly-cloudy-night':
-      return 'moon-clouds.png'
-    default:
-      return 'sun-clouds-few.png'
+const parseIcon = {
+  'clear-day': {
+    icon: 'sun.png',
+    shortText: 'Sonnig',
+    text: 'Das Wetter ist sonnig bei '
+  },
+  'clear-night': {
+    icon: 'sun.png', //TODO find icon
+    shortText: 'Sternenklar',
+    text: 'Die Nacht ist sternenklar bei '
+  },
+  'rain': {
+    icon: 'rain.png',
+    shortText: 'Regen',
+    text: 'Das Wetter ist regnerisch bei '
+  },
+  'snow': {
+    icon: 'snow.png',
+    shortText: 'Schnee',
+    text: 'Es schneit bei '
+  },
+  'sleet': {
+    icon: 'rain-snow.png',
+    shortText: 'Schneeregen',
+    text: 'Es fällt Schneeregen bei '
+  },
+  'wind': {
+    icon: 'wind.png',
+    shortText: 'starker Wind',
+    text: 'Es windet stark bei '
+  },
+  'fog': {
+    icon: 'snow.png', //TODO find icon
+    shortText: 'Nebel',
+    text: 'Das Wetter ist neblig bei '
+  },
+  'cloudy': {
+    icon: 'clouds.png',
+    shortText: 'Bewölkt',
+    text: 'Der Himmel ist bewölkt bei '
+  },
+  'partly-cloudy-day': {
+    icon: 'sun-clouds.png',
+    shortText: 'Leicht bewölkt',
+    text: 'Der Himmel ist leicht bewölkt bei '
+  },
+  'partly-cloudy-night': {
+    icon: 'moon-clouds.png',
+    shortText: 'Leicht bewölkt',
+    text: 'Zwischen den Wolken sieht man die Sterne bei '
   }
 }
 
@@ -50,10 +76,10 @@ function renderWeather (domNode, weather) {
     <em>{{=it.description}}</em>
   `)
   domNode.html(render({
-    weatherIconPath: path.join(__dirname, getIcon(weather.currently.icon)),
+    weatherIconPath: path.join(__dirname, parseIcon[weather.currently.icon].icon || 'sun-clouds.png'),
     temperature: Math.round(weather.currently.temperature),
     humidity: weather.currently.humidity * 100,
-    description: weather.currently.summary
+    description: parseIcon[weather.currently.icon].shortText || 'Überraschend'
   }))
 }
 
@@ -61,12 +87,15 @@ function getPos (cb) {
   $.get('https://maps.googleapis.com/maps/api/browserlocation/json?browser=chromium&sensor=true')
   .then(data => {
     if (data.status == 'OK')
-      cb(data.location)
+      cb(null, data.location)
+    else
+      cb(true, null)
   })
 }
 
 function getWeather (cb) {
-  getPos(pos => {
+  getPos((err, pos) => {
+    if (err) return cb(err)
     const lat = pos.lat
     const lon = pos.lng
     let url = 'https://api.darksky.net/forecast/'+moduleData.API_Key+'/'+lat+','+lon+'/'
@@ -81,19 +110,35 @@ function getWeather (cb) {
 }
 
 speech.addCommands({
-  "what's the weather like": () => {
+  'Wie ist das Wetter': () => {
     getWeather((err, data) => {
       if (err)
-        responsiveVoice.speak('Sorry, there was an error.', "UK English Male", {onend: () => {
+        responsiveVoice.speak('Entschuldigung, es gab einen Fehler.', "Deutsch Female", {onend: () => {
           require('../../renderer').showVoiceOverlay(false)
         }})
       else {
-        let text = 'The current weather condition is ' + data.currently.summary + ' at a temperature of ' + Math.round(data.currently.temperature) + " degrees."
-        responsiveVoice.speak(text, "UK English Male", {onend: () => {
+        let summary = parseIcon[data.currently.icon].text || "Ich kann dir nicht sagen wie das Wetter ist, aber es sind "
+        let text = summary + Math.round(data.currently.temperature) + " Grad."
+        responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
           require('../../renderer').showVoiceOverlay(false)
         }})
       }
     })
+  }, //TODO: implement all these phrases
+  'Wie wird das Wetter heute um :time': () => {
+    require('../../renderer').showVoiceOverlay(false)
+  },
+  'Wie wird das Wetter heute Nacht': () => {
+    require('../../renderer').showVoiceOverlay(false)
+  },
+  'Wie wird das Wetter morgen': () => {
+    require('../../renderer').showVoiceOverlay(false)
+  },
+  'Wie ist das Wetter in *city': () => {
+    require('../../renderer').showVoiceOverlay(false)
+  },
+  'Wie wird das Wetter nächste Woche': () => {
+    require('../../renderer').showVoiceOverlay(false)
   }
 })
 
