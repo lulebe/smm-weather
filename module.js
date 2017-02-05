@@ -2,6 +2,10 @@ const $ = require('jquery')
 const dot = require('dot')
 const path = require('path')
 
+const speech = require('../../speech/recognition')
+
+let moduleData = null
+
 function getIcon (icon) {
   switch (icon) {
     case 'clear-day':
@@ -61,20 +65,47 @@ function getPos (cb) {
   })
 }
 
+function getWeather (cb) {
+  getPos(pos => {
+    const lat = pos.lat
+    const lon = pos.lng
+    let url = 'https://api.darksky.net/forecast/'+moduleData.API_Key+'/'+lat+','+lon+'/'
+    url += '?exclude=minutely,daily,alerts,flags&units=ca'
+    $.get(url).then(data => {
+      cb(null, data)
+    }, () => {
+      cb(true, null)
+      renderError(domNode)
+    })
+  })
+}
+
+speech.addCommands({
+  "what's the weather like": () => {
+    getWeather((err, data) => {
+      if (err)
+        responsiveVoice.speak('Sorry, there was an error.', "UK English Male", {onend: () => {
+          require('../../renderer').showVoiceOverlay(false)
+        }})
+      else {
+        let text = 'The current weather condition is ' + data.currently.summary + ' at a temperature of ' + Math.round(data.currently.temperature) + " degrees."
+        responsiveVoice.speak(text, "UK English Male", {onend: () => {
+          require('../../renderer').showVoiceOverlay(false)
+        }})
+      }
+    })
+  }
+})
 
 module.exports = function (data) {
+  moduleData = data
   return {
     renderStatus: function (domNode) {
-      getPos(pos => {
-        const lat = pos.lat
-        const lon = pos.lng
-        let url = 'https://api.darksky.net/forecast/'+data.API_Key+'/'+lat+','+lon+'/'
-        url += '?exclude=minutely,daily,alerts,flags&units=ca'
-        $.get(url).then(data => {
-          renderWeather(domNode, data)
-        }, () => {
+      getWeather((err, data) => {
+        if (err)
           renderError(domNode)
-        })
+        else
+          renderWeather(domNode, data)
       })
     }
   }
