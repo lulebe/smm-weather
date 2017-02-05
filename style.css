@@ -1,0 +1,14 @@
+.smm-weather-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.smm-weather-img {
+  height: 74px;
+  margin-right: 8px;
+}
+
+.smm-weather-info {
+  text-align: right;
+}
