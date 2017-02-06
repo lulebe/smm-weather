@@ -2,60 +2,71 @@ const $ = require('jquery')
 const dot = require('dot')
 const path = require('path')
 
-const speech = require('../../speech/recognition')
+const voiceDE = require('./voice_de')
+const voiceEN = require('./voice_en')
 
 let moduleData = null
 
 const parseIcon = {
   'clear-day': {
     icon: 'sun.png',
-    shortText: 'Sonnig',
-    text: 'Das Wetter ist sonnig bei '
+    shortTextDE: 'Sonnig',
+    textStartDE: 'Das Wetter ',
+    textEndDE: ' ist sonnig bei '
   },
   'clear-night': {
     icon: 'sun.png', //TODO find icon
-    shortText: 'Sternenklar',
-    text: 'Die Nacht ist sternenklar bei '
+    shortTextDE: 'Sternenklar',
+    textStartDE: 'Die Nacht ',
+    textEndDE: ' ist sternenklar bei '
   },
   'rain': {
     icon: 'rain.png',
-    shortText: 'Regen',
-    text: 'Das Wetter ist regnerisch bei '
+    shortTextDE: 'Regen',
+    textStartDE: 'Das Wetter ',
+    textEndDE: ' ist regnerisch bei '
   },
   'snow': {
     icon: 'snow.png',
-    shortText: 'Schnee',
-    text: 'Es schneit bei '
+    shortTextDE: 'Schnee',
+    textStartDE: '',
+    textEndDE: ' schneit es bei '
   },
   'sleet': {
     icon: 'rain-snow.png',
-    shortText: 'Schneeregen',
-    text: 'Es fällt Schneeregen bei '
+    shortTextDE: 'Schneeregen',
+    textStartDE: '',
+    textEndDE: ' fällt Schneeregen bei '
   },
   'wind': {
     icon: 'wind.png',
-    shortText: 'starker Wind',
-    text: 'Es windet stark bei '
+    shortTextDE: 'starker Wind',
+    textStartDE: '',
+    textEndDE: ' windet es stark bei '
   },
   'fog': {
     icon: 'snow.png', //TODO find icon
-    shortText: 'Nebel',
-    text: 'Das Wetter ist neblig bei '
+    shortTextDE: 'Nebel',
+    textStartDE: 'Das Wetter ',
+    textEndDE: ' ist neblig bei '
   },
   'cloudy': {
     icon: 'clouds.png',
-    shortText: 'Bewölkt',
-    text: 'Der Himmel ist bewölkt bei '
+    shortTextDE: 'Bewölkt',
+    textStartDE: 'Der Himmel ',
+    textEndDE: ' ist bewölkt bei '
   },
   'partly-cloudy-day': {
     icon: 'sun-clouds.png',
-    shortText: 'Leicht bewölkt',
-    text: 'Der Himmel ist leicht bewölkt bei '
+    shortTextDE: 'Leicht bewölkt',
+    textStartDE: 'Der Himmel ',
+    textEndDE: ' ist leicht bewölkt bei '
   },
   'partly-cloudy-night': {
     icon: 'moon-clouds.png',
-    shortText: 'Leicht bewölkt',
-    text: 'Zwischen den Wolken sieht man die Sterne bei '
+    shortTextDE: 'Leicht bewölkt',
+    textStartDE: '',
+    textEndDE: 'sieht man  zwischen den Wolken die Sterne bei '
   }
 }
 
@@ -64,6 +75,7 @@ function renderError (domNode) {
 }
 
 function renderWeather (domNode, weather) {
+  const language = require('../../renderer').getSettings().language
   const render = dot.template(`
     <div class="smm-weather-container">
       <img src="file://{{=it.weatherIconPath}}" class="smm-weather-img">
@@ -75,12 +87,19 @@ function renderWeather (domNode, weather) {
     </div>
     <em>{{=it.description}}</em>
   `)
-  domNode.html(render({
+  const renderData = {
     weatherIconPath: path.join(__dirname, parseIcon[weather.currently.icon].icon || 'sun-clouds.png'),
     temperature: Math.round(weather.currently.temperature),
-    humidity: weather.currently.humidity * 100,
-    description: parseIcon[weather.currently.icon].shortText || 'Überraschend'
-  }))
+    humidity: weather.currently.humidity * 100
+  }
+  switch (language) {
+    case 'DE':
+      renderData.description = parseIcon[weather.currently.icon].shortTextDE || 'Überraschend'
+      break;
+    default:
+      renderData.description = weather.currently.summary
+  }
+  domNode.html(render(renderData))
 }
 
 function getPos (cb) {
@@ -93,57 +112,27 @@ function getPos (cb) {
   })
 }
 
-function getWeather (cb) {
-  getPos((err, pos) => {
-    if (err) return cb(err)
-    const lat = pos.lat
-    const lon = pos.lng
-    let url = 'https://api.darksky.net/forecast/'+moduleData.API_Key+'/'+lat+','+lon+'/'
-    url += '?exclude=minutely,daily,alerts,flags&units=ca'
-    $.get(url).then(data => {
-      cb(null, data)
-    }, () => {
-      cb(true, null)
-      renderError(domNode)
-    })
+function loadWeather (lat, lon, cb) {
+  let url = 'https://api.darksky.net/forecast/'+moduleData.API_Key+'/'+lat+','+lon+'/'
+  url += '?exclude=minutely,alerts,flags&units=ca'
+  $.get(url).then(data => {
+    cb(null, data)
+  }, () => {
+    cb(true, null)
   })
 }
 
-speech.addCommands({
-  'Wie ist das Wetter': () => {
-    getWeather((err, data) => {
-      if (err)
-        responsiveVoice.speak('Entschuldigung, es gab einen Fehler.', "Deutsch Female", {onend: () => {
-          require('../../renderer').showVoiceOverlay(false)
-        }})
-      else {
-        let summary = parseIcon[data.currently.icon].text || "Ich kann dir nicht sagen wie das Wetter ist, aber es sind "
-        let text = summary + Math.round(data.currently.temperature) + " Grad."
-        responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
-          require('../../renderer').showVoiceOverlay(false)
-        }})
-      }
-    })
-  }, //TODO: implement all these phrases
-  'Wie wird das Wetter heute um :time': () => {
-    require('../../renderer').showVoiceOverlay(false)
-  },
-  'Wie wird das Wetter heute Nacht': () => {
-    require('../../renderer').showVoiceOverlay(false)
-  },
-  'Wie wird das Wetter morgen': () => {
-    require('../../renderer').showVoiceOverlay(false)
-  },
-  'Wie ist das Wetter in *city': () => {
-    require('../../renderer').showVoiceOverlay(false)
-  },
-  'Wie wird das Wetter nächste Woche': () => {
-    require('../../renderer').showVoiceOverlay(false)
-  }
-})
+function getWeather (cb) {
+  getPos((err, pos) => {
+    if (err) return cb(err)
+    loadWeather(pos.lat, pos.lng, cb)
+  })
+}
 
 module.exports = function (data) {
   moduleData = data
+  voiceDE(getWeather, loadWeather, parseIcon)
+  voiceEN(getWeather, loadWeather, parseIcon)
   return {
     renderStatus: function (domNode) {
       getWeather((err, data) => {
