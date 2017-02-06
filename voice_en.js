@@ -17,7 +17,7 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
           let text = 'The current weather condition is ' +
               data.currently.summary +
               ' at a temperature of ' +
-              data.currently.temperature +
+              Math.round(data.currently.temperature) +
               ' degrees.'
           responsiveVoice.speak(text, "UK English Male", {onend: () => {
             require('../../renderer').showVoiceOverlay(false)

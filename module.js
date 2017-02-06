@@ -2,6 +2,8 @@ const $ = require('jquery')
 const dot = require('dot')
 const path = require('path')
 
+const renderer = require('../../renderer');
+
 const voiceDE = require('./voice_de')
 const voiceEN = require('./voice_en')
 
@@ -75,7 +77,7 @@ function renderError (domNode) {
 }
 
 function renderWeather (domNode, weather) {
-  const language = require('../../renderer').getSettings().language
+  const language = renderer.getSettings().language
   const render = dot.template(`
     <div class="smm-weather-container">
       <img src="file://{{=it.weatherIconPath}}" class="smm-weather-img">
@@ -102,16 +104,6 @@ function renderWeather (domNode, weather) {
   domNode.html(render(renderData))
 }
 
-function getPos (cb) {
-  $.get('https://maps.googleapis.com/maps/api/browserlocation/json?browser=chromium&sensor=true')
-  .then(data => {
-    if (data.status == 'OK')
-      cb(null, data.location)
-    else
-      cb(true, null)
-  })
-}
-
 function loadWeather (lat, lon, cb) {
   let url = 'https://api.darksky.net/forecast/'+moduleData.API_Key+'/'+lat+','+lon+'/'
   url += '?exclude=minutely,alerts,flags&units=ca'
@@ -123,10 +115,8 @@ function loadWeather (lat, lon, cb) {
 }
 
 function getWeather (cb) {
-  getPos((err, pos) => {
-    if (err) return cb(err)
-    loadWeather(pos.lat, pos.lng, cb)
-  })
+  const pos = renderer.getSettings().location
+  loadWeather(pos.lat, pos.lng, cb)
 }
 
 module.exports = function (data) {
