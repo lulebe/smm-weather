@@ -1,12 +1,11 @@
 const speech = require('../../speech/recognition')
-const speak = require('../../speech/speak').speak
 
 module.exports = function (getWeather, loadWeather, parseIcon) {
 
   const voiceErrorEN = () => {
-    speak("I'm sorry, there was an error.", 'EN', () => {
+    responsiveVoice.speak("I'm sorry, there was an error.", 'UK English Male', {onend: () => {
       require('../../renderer').showVoiceOverlay(false)
-    })
+    }})
   }
 
   speech.addCommands({
@@ -20,9 +19,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
               ' at a temperature of ' +
               Math.round(data.currently.temperature) +
               ' degrees.'
-          speak(text, 'EN', () => {
+          responsiveVoice.speak(text, "UK English Male", {onend: () => {
             require('../../renderer').showVoiceOverlay(false)
-          })
+          }})
         }
       })
     }
