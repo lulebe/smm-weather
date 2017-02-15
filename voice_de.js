@@ -1,4 +1,5 @@
 const speech = require('../../speech/recognition')
+const $ = require('jquery')
 
 const renderer = require('../../renderer');
 
