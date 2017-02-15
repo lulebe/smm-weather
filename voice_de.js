@@ -1,14 +1,15 @@
 const speech = require('../../speech/recognition')
 const $ = require('jquery')
 
-const renderer = require('../../renderer');
+const renderer = require('../../renderer')
+const speak = require('../../speeck/speak').speak
 
 module.exports = function (getWeather, loadWeather, parseIcon) {
 
   const voiceErrorDE = () => {
-    responsiveVoice.speak('Entschuldigung, es gab einen Fehler.', 'Deutsch Female', {onend: () => {
+    speak('Entschuldigung, es gab einen Fehler.', 'DE', () => {
       renderer.showVoiceOverlay(false)
-    }})
+    })
   }
 
 
@@ -24,9 +25,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
           else
             summary = "Ich kann dir nicht sagen wie das Wetter ist, aber es sind "
           let text = summary + Math.round(data.currently.temperature) + " Grad."
-          responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
+          speak(text, 'DE', () => {
             renderer.showVoiceOverlay(false)
-          }})
+          })
         }
       })
     },
@@ -50,9 +51,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
           else
             summary = "Ich kann dir nicht sagen wie das Wetter wird, aber es werden "
           let text = summary + Math.round(data.hourly.data[hour].temperature) + " Grad."
-          responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
+          speak(text, 'DE', () => {
             renderer.showVoiceOverlay(false)
-          }})
+          })
         }
       })
     },
@@ -68,9 +69,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
           else
             summary = "Ich kann dir nicht sagen wie das Wetter wird, aber es werden "
           let text = summary + Math.round(data.hourly.data[hour].temperature) + " Grad."
-          responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
+          speak(text, 'DE', () => {
             renderer.showVoiceOverlay(false)
-          }})
+          })
         }
       })
       renderer.showVoiceOverlay(false)
@@ -90,9 +91,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
             summary = 'Ich kann dir nicht sagen wie das Wetter wird, aber es werden '
           let text = summary + Math.round(data.daily.data[1].temperatureMin) + ' bis ' + Math.round(data.daily.data[1].temperatureMax) + ' Grad.'
           console.log(text)
-          responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
+          speak(text, 'DE', () => {
             renderer.showVoiceOverlay(false)
-          }})
+          })
         }
       })
     },
@@ -113,9 +114,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
           else
             summary = 'Ich kann dir nicht sagen wie das Wetter in ' + loc.results[0].formatted_address + ' ist, aber es sind '
           let text = summary + Math.round(data.currently.temperature) + " Grad."
-          responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
+          speak(text, 'DE', () => {
             renderer.showVoiceOverlay(false)
-          }})
+          })
         })
       }, () => {
         voiceErrorDE()
@@ -133,9 +134,9 @@ module.exports = function (getWeather, loadWeather, parseIcon) {
           else
             summary = 'Ich kann dir nicht sagen wie das Wetter wird, aber es werden '
           let text = summary + Math.round(data.daily.data[7].temperatureMin) + ' bis ' + Math.round(data.daily.data[7].temperatureMax) + ' Grad.'
-          responsiveVoice.speak(text, "Deutsch Female", {onend: () => {
+          speak(text, 'DE', () => {
             renderer.showVoiceOverlay(false)
-          }})
+          })
         }
       })
     }
